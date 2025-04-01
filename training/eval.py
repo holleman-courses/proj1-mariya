@@ -88,7 +88,7 @@ def convert_model_to_int8(model):
     # Save the quantized TFLite model to a file
     with open('cat_detector_int8.tflite', "wb") as fpo:
       fpo.write(tflite_model)
-    print(f"Wrote to {tflite_model}")
+    print(f"Wrote to {tflite_model}")   
 
 def test_quantized_model():
     # Load the quantized model
@@ -116,7 +116,9 @@ def test_quantized_model():
         interpreter.invoke()
 
         output_data = interpreter.get_tensor(output_details[0]['index'])
+        print(output_data)
         predicted_label = np.argmax(output_data)
+        print(f'Predicted value: {predicted_label}, true value: {true_label}')
     
         if true_label == 1 and predicted_label == 1:
             TP += 1  # True Positive
@@ -169,10 +171,10 @@ def test_quantized_model():
     '''
 
 # Load the images and labels
-images, labels = load_images_and_labels(cat_dir, non_cat_dir, img_size)
+#images, labels = load_images_and_labels(cat_dir, non_cat_dir, img_size)
 
 # One-hot encode the labels for evaluation
-labels = to_categorical(labels, num_classes=2)
+#labels = to_categorical(labels, num_classes=2)
 
 import tensorflow as tf
 print(tf.__version__)
@@ -180,7 +182,7 @@ print(tf.__version__)
 # Load the trained model
 model = tf.keras.models.load_model(model_path)
 # Evaluate the model on the test set
-loss, accuracy = model.evaluate(images, labels, batch_size=64)
+#loss, accuracy = model.evaluate(images, labels, batch_size=64)
 
 model.summary()
 

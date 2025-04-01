@@ -52,13 +52,17 @@ void RespondToDetection(tflite::ErrorReporter* error_reporter,
   if (cat_score > no_cat_score) {
     digitalWrite(LEDG, LOW);
     digitalWrite(LEDR, HIGH);
+    TF_LITE_REPORT_ERROR(error_reporter, "Cat detected",
+      cat_score, no_cat_score);
   } else {
     digitalWrite(LEDG, HIGH);
     digitalWrite(LEDR, LOW);
+    TF_LITE_REPORT_ERROR(error_reporter, "No cat",
+      cat_score, no_cat_score);
   }
 
-  TF_LITE_REPORT_ERROR(error_reporter, "Cat score: %d No cat score: %d",
-                       cat_score, no_cat_score);
+  //TF_LITE_REPORT_ERROR(error_reporter, "Cat score: %d No cat score: %d",
+  //                     cat_score, no_cat_score);
 }
 
 #endif  // ARDUINO_EXCLUDE_CODE

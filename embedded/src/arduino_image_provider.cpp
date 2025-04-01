@@ -17,11 +17,15 @@
 #include "Arduino.h"
 #include <TinyMLShield.h>
 
+#define CAMERA_IMAGE_WIDTH    176
+#define CAMERA_IMAGE_HEIGHT   144
+#define MODEL_IMAGE_WIDTH     96
+#define MODEL_IMAGE_HEIGHT    96
 // Get an image from the camera module
 TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
                       int image_height, int channels, int8_t* image_data) {
 
-  byte data[176 * 144]; // Receiving QCIF grayscale from camera = 176 * 144 * 1
+  byte data[CAMERA_IMAGE_WIDTH * CAMERA_IMAGE_HEIGHT]; // Receiving QCIF grayscale from camera = 176 * 144 * 1
 
   static bool g_is_camera_initialized = false;
   static bool serial_is_initialized = false;
@@ -38,14 +42,14 @@ TfLiteStatus GetImage(tflite::ErrorReporter* error_reporter, int image_width,
   // Read camera data
   Camera.readFrame(data);
 
-  int min_x = (176 - 96) / 2;
-  int min_y = (144 - 96) / 2;
+  int min_x = (CAMERA_IMAGE_WIDTH - MODEL_IMAGE_WIDTH) / 2;
+  int min_y = (CAMERA_IMAGE_HEIGHT - MODEL_IMAGE_HEIGHT) / 2;
   int index = 0;
 
-  // Crop 96x96 image. This lowers FOV, ideally we would downsample but this is simpler. 
-  for (int y = min_y; y < min_y + 96; y++) {
-    for (int x = min_x; x < min_x + 96; x++) {
-      image_data[index++] = static_cast<int8_t>(data[(y * 176) + x] - 128); // convert TF input image to signed 8-bit
+  // Crop full image. This lowers FOV, ideally we would downsample but this is simpler. 
+  for (int y = min_y; y < min_y + MODEL_IMAGE_WIDTH; y++) {
+    for (int x = min_x; x < min_x + MODEL_IMAGE_HEIGHT; x++) {
+      image_data[index++] = static_cast<int8_t>(data[(y * CAMERA_IMAGE_WIDTH) + x] - 128); // convert TF input image to signed 8-bit
     }
   }
 

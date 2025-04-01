@@ -7,6 +7,7 @@ from tensorflow.keras.utils import to_categorical
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.keras.callbacks import ReduceLROnPlateau
+from tensorflow.keras import regularizers
 
 # Set the paths for your dataset
 cat_dir = 'cat/'
@@ -89,30 +90,34 @@ def load_images_and_labels(cat_dir, non_cat_dir, width, height):
 
 def build_model():
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Conv2D(15, kernel_size=(3, 3), activation='relu', input_shape=(img_width, img_height, 1)),
+        tf.keras.layers.Conv2D(8, kernel_size=(3, 3), padding='same', activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(img_width, img_height, 1)),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.AveragePooling2D((2, 2)),
+        tf.keras.layers.AveragePooling2D((2,2)),
+        tf.keras.layers.Dropout(0.2),
+                        
+        tf.keras.layers.SeparableConv2D(16,kernel_size=(3, 3), depthwise_regularizer=regularizers.l2(0.0001), padding='same', activation='relu'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.AveragePooling2D((2,2)),
         tf.keras.layers.Dropout(0.2),
         
-        tf.keras.layers.SeparableConv2D(30, kernel_size=(3, 3), activation='relu'),
+        tf.keras.layers.SeparableConv2D(32, kernel_size=(3, 3), depthwise_regularizer=regularizers.l2(0.0001), padding='same', activation='relu'),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.AveragePooling2D((2, 2)),
+        tf.keras.layers.AveragePooling2D((2,2)),
         tf.keras.layers.Dropout(0.2),
         
-        # Additional Convolutional Layers
-        tf.keras.layers.SeparableConv2D(60, kernel_size=(3, 3), activation='relu'),
+        tf.keras.layers.SeparableConv2D(64, kernel_size=(3, 3), depthwise_regularizer=regularizers.l2(0.0001), padding='same', activation='relu'),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.AveragePooling2D((2, 2)),
-        tf.keras.layers.Dropout(0.2),
-        
-        tf.keras.layers.SeparableConv2D(120, kernel_size=(3, 3), activation='relu'),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.AveragePooling2D((2, 2)),
+        tf.keras.layers.AveragePooling2D((2,2)),
         tf.keras.layers.Dropout(0.2),
 
-        tf.keras.layers.SeparableConv2D(240, kernel_size=(3, 3), activation='relu'),
+        tf.keras.layers.SeparableConv2D(128, kernel_size=(3, 3), depthwise_regularizer=regularizers.l2(0.001), padding='same', activation='relu'),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dropout(0.3),
+        tf.keras.layers.AveragePooling2D((2,2)),
+        tf.keras.layers.Dropout(0.2),
+
+        tf.keras.layers.SeparableConv2D(64, kernel_size=(3, 3), depthwise_regularizer=regularizers.l2(0.001), padding='same', activation='relu'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Dropout(0.2),
 
         # Flatten the output from the convolutional layers
         tf.keras.layers.GlobalAveragePooling2D(),
@@ -189,7 +194,7 @@ history = model.fit(
     train_generator,
     shuffle=True,
     steps_per_epoch=len(X_train) // batch_size,
-    epochs=50,
+    epochs=70,
     #callbacks=[early_stopping, lr_scheduler],
     callbacks=[lr_scheduler],
     validation_data=test_generator,

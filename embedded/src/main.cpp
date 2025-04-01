@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <TensorFlowLite.h>
+#include <Arduino.h>
 
 #include "main_functions.h"
 
@@ -43,13 +44,18 @@ TfLiteTensor* input = nullptr;
 // signed value.
 
 // An area of memory to use for input, output, and intermediate arrays.
-constexpr int kTensorArenaSize = 96*96*16;//136 * 1024;
+constexpr int kTensorArenaSize = 200000;//96*96*16;
 static uint8_t tensor_arena[kTensorArenaSize];
 }  // namespace
 
 // The name of this function is important for Arduino compatibility.
 void setup() {
+
   delay(15000);
+
+  Serial.begin(9600);
+  while (!Serial);
+  Serial.println("In Setup...");
 
   // Set up logging. Google style is to avoid globals or statics because of
   // lifetime uncertainty, but since this has a trivial destructor it's okay.
@@ -76,8 +82,9 @@ void setup() {
   //
   // tflite::AllOpsResolver resolver;
   // NOLINTNEXTLINE(runtime-global-variables)
-  static tflite::MicroMutableOpResolver<5> micro_op_resolver;
-  micro_op_resolver.AddMaxPool2D();
+  static tflite::MicroMutableOpResolver<10> micro_op_resolver;
+  micro_op_resolver.AddMul();
+  micro_op_resolver.AddAveragePool2D();
   micro_op_resolver.AddAdd();
   micro_op_resolver.AddFullyConnected();
   micro_op_resolver.AddRelu();
@@ -85,6 +92,7 @@ void setup() {
   micro_op_resolver.AddDepthwiseConv2D();
   micro_op_resolver.AddReshape();
   micro_op_resolver.AddSoftmax();
+  micro_op_resolver.AddMean();
 
   // Build an interpreter to run the model with.
   // NOLINTNEXTLINE(runtime-global-variables)
@@ -106,11 +114,17 @@ void setup() {
 
 // The name of this function is important for Arduino compatibility.
 void loop() {
+  unsigned long time0, time1, time2;
+  unsigned long t_image, t_infer;
+
+  time0 = micros();
   // Get image from provider.
   if (kTfLiteOk != GetImage(error_reporter, kNumCols, kNumRows, kNumChannels,
                             input->data.int8)) {
     TF_LITE_REPORT_ERROR(error_reporter, "Image capture failed.");
   }
+
+  time1 = micros();
 
   // Run the model on this input and make sure it succeeds.
   if (kTfLiteOk != interpreter->Invoke()) {
@@ -118,9 +132,15 @@ void loop() {
   }
 
   TfLiteTensor* output = interpreter->output(0);
+  time2 = micros();
 
   // Process the inference results.
   int8_t cat_score = output->data.uint8[kCatIndex];
   int8_t no_cat_score = output->data.uint8[kNotCatIndex];
   RespondToDetection(error_reporter, cat_score, no_cat_score);
+
+  t_image = time2 - time1;
+  t_infer = time2 - time0;
+
+  Serial.println("Image time: " + String(t_image) + " ms,  Inference time: " + String(t_infer) + " ms.");
 }
